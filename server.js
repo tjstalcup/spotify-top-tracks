@@ -27,17 +27,33 @@ app.get('/search/:name', function(req, res) {
         type: 'artist'
     });
 
+    var completed = 0;
+    var relatedArtist = 0;
     searchReq.on('end', function(item) {
+
         var artist = item.artists.items[0];
         var searchRelate = getFromApi('artists/' + artist.id + '/related-artists', {});
         searchRelate.on('end', function(item){
+            relatedArtist = item.artists.length;
             artist.related = item.artists;
-
-
-            res.json(artist);
+            for (var i = 0; i < artist.related; i++) {
+                var topTrackRequests = getFromApi('artists/' + artists.id + '/top-tracks', {});
+                    topTrackRequests.on('end', function(item){
+                        artist.related[i].tracks = item.tracks; 
+                        completed ++;
+                        checkComplete(artist);
+                    });
+            
+            }
+                       
         });
         
     });
+    var checkComplete = function(artist) {
+        if (completed === relatedArtist) {
+         res.json(artist);
+        }
+    }; 
 
     searchReq.on('error', function(code) {
         res.sendStatus(code);
